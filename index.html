@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emotion Recognition</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top:30px ;
+            padding: 40px;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 600px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            margin: 10px;
+           
+        }
+
+        .head {
+            font-size: 22px;
+            font-weight: bold;
+            margin-top: 15px;
+            color: #333;
+        }
+
+        .upload-btn, button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background-color 0.3s ease;
+        }
+
+        .upload-btn:hover, button:hover {
+            background-color: #45a049;
+        }
+
+        h3 {
+            font-size: 18px;
+            margin-top: 15px;
+            color: #555;
+        }
+
+        #result {
+            font-size: 20px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        input, button {
+            display: block;
+            margin: 10px auto;
+            width: 100%;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-container {
+            margin-top: 10px;
+        }
+
+        .choose-file-text {
+            display: inline-block;
+            background-color: #f1f1f1;
+            color: #333;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .choose-file-text:hover {
+            background-color: #e0e0e0;
+        }
+
+        #videoStream {
+            display: block;
+            width: 90%;
+            max-width: 500px;
+            height: auto;
+            border: 5px solid black;
+            border-radius: 10px;
+            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.3);
+            margin: 20px auto;
+           
+        }
+        #audioPlayerContainer {
+        margin-top: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        }
+    audio {
+        margin-left: 20px;
+    }
+    .choose-file-text {
+            display: inline-block;
+            background-color: #f1f1f1;
+            color: #333;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+    .choose-file-text:hover {
+            background-color: #e0e0e0;
+        }
+        #videoStream {
+            display: block;
+            width: 90%;
+            max-width: 500px;
+            height: auto;
+            border: 5px solid black;
+            border-radius: 10px;
+            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.3);
+            margin: 20px auto;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 🔹 Audio  upload Emotion Detection Section -->
+    <div class="container">
+        <h2 class="head">Upload Audio for Emotion Detection</h2>
+        <div class="file-container">
+            <input type="file" id="audioFile" accept="audio/*" class="file-input" onchange="previewAudio()">
+            <label for="audioFile" class="choose-file-text">Choose Audio File</label>
+        </div>
+        <div id="audioPlayerContainer">
+            <audio id="audioPlayer" controls>
+                <!-- Your browser does not support the audio element. -->
+            </audio>
+        </div>
+        <button class="upload-btn" onclick="uploadAudio()">Upload</button>
+        <h3 class="prediction" style="display: none;">Predicted Emotion: <span id="result">None</span></h3>
+    </div>
+    <!-- 🔹 Live Audio Emotion Detection Section -->
+   <div class="container">
+    <h2>Audio Recorder</h2>
+    <button id="startRecording">Start Recording</button>
+    <button id="stopRecording" disabled>Stop Recording</button>
+    <h3>Recorded Audio:</h3>
+    <audio id="audioPlayback" controls></audio>
+    <button id="uploadAudioo" onclick="UploadAudioLive()" disabled>Upload & Predict Emotion</button>
+    <h3 class="prediction1" style="display: none;">Predicted Emotion: <span id="result1"></span></h3>
+   </div>
+    <!-- 🔹 Video upload Emotion Detection Section -->
+    <div class="container">
+        <h1 class="head">Emotion Detection from Video</h1>
+
+        <!-- Upload Video Form -->
+        <form id="uploadForm" enctype="multipart/form-data">
+            <input  type="file" id="videoFile" accept="video/*" class="file-input" required>
+            <label for="videoFile" class="choose-file-text">Choose Video File</label>
+            <button  type="submit">Upload Video</button>
+        </form>
+
+        <h2>Live Video Stream</h2>
+        <!-- <img id="videoStream" src="{{ url_for('video_stream') }}" alt="Video Stream"> -->
+        <img id="videoStream" src="" alt="Video Stream" style="display:none;">
+        <br>
+        <button onclick="stopVideo()">Stop Video</button>
+    </div>
+    <!-- 🔹 Live Video Emotion Detection Section -->
+
+    <div class="container">
+        <div class="container2">
+            <div class="secondFirstContainer">
+                <button onclick="turnOnCamera()">Turn On Camera</button>
+                <button onclick="turnOffCamera()">Turn Off Camera</button>
+            </div>
+            <div id="error-message"></div>
+        </div>
+        <div class="secondSecondContainer">
+            <div id="cameraContainer"></div>
+            <div id="emotiondiv"></div>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.all.js"></script>
+    <script>
+   
+   let audioContext;
+let recorder;
+let audioBlob;
+let audioURL;
+
+const startButton = document.getElementById("startRecording");
+const stopButton = document.getElementById("stopRecording");
+const uploadButton = document.getElementById("uploadAudioo");
+const audioPlayback = document.getElementById("audioPlayback");
+
+startButton.addEventListener("click", startRecording);
+stopButton.addEventListener("click", stopRecording);
+uploadButton.addEventListener("click", UploadAudioLive);
+
+async function startRecording() {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const input = audioContext.createMediaStreamSource(stream);
+    recorder = new MediaRecorder(stream);
+
+    recorder.ondataavailable = (e) => {
+        audioBlob = e.data;
+        audioURL = URL.createObjectURL(audioBlob);
+        audioPlayback.src = audioURL;
+        uploadButton.disabled = false;
+    };
+
+    recorder.start();
+    startButton.disabled = true;
+    stopButton.disabled = false;
+}
+
+function stopRecording() {
+    recorder.stop();
+    startButton.disabled = false;
+    stopButton.disabled = true;
+}
+
+async function convertToMP3(wavBlob) {
+    const arrayBuffer = await wavBlob.arrayBuffer();
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+    const sampleRate = audioBuffer.sampleRate;
+    const channelData = audioBuffer.getChannelData(0);
+
+    const samples = floatTo16BitPCM(channelData);
+    const mp3Encoder = new lamejs.Mp3Encoder(1, sampleRate, 128);
+    const mp3Data = [];
+    let blockSize = 1152;
+    for (let i = 0; i < samples.length; i += blockSize) {
+        let sampleChunk = samples.subarray(i, i + blockSize);
+        let mp3buf = mp3Encoder.encodeBuffer(sampleChunk);
+        if (mp3buf.length > 0) {
+            mp3Data.push(mp3buf);
+        }
+    }
+
+    const finalBuffer = mp3Encoder.flush();
+    if (finalBuffer.length > 0) {
+        mp3Data.push(finalBuffer);
+    }
+
+    return new Blob(mp3Data, { type: 'audio/mp3' });
+}
+
+function floatTo16BitPCM(floatSamples) {
+    let output = new Int16Array(floatSamples.length);
+    for (let i = 0; i < floatSamples.length; i++) {
+        let s = Math.max(-1, Math.min(1, floatSamples[i]));
+        output[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+    }
+    return output;
+}
+
+async function UploadAudioLive() {
+    if (!audioBlob) {
+        alert("No audio recorded!");
+        return;
+    }
+
+    // Convert to MP3
+    const mp3Blob = await convertToMP3(audioBlob);
+    const formData = new FormData();
+    formData.append("audio", mp3Blob, "recorded_audio.mp3");
+
+    fetch("/upload-audio", {
+        method: "POST",
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.querySelector(".prediction1").style.display = "block";
+        document.getElementById("result1").textContent = data.predicted_emotion || "Unknown";
+    })
+    .catch(error => console.error("Error:", error));
+}
+
+
+function turnOnCamera() {
+    const cameraContainer = document.getElementById("cameraContainer");
+    const errorMessage = document.getElementById("error-message");
+
+    // Clear the uploaded video if any
+    fetch("/clear-uploaded-video", { method: "POST" })  
+        .then(() => {
+            fetch("/start-video-live", { method: "POST" })
+                .then(response => {
+                    if (response.ok) {
+                        console.log("Camera started successfully.");
+                        errorMessage.innerHTML = "";
+                        cameraContainer.style.display = "block";
+
+                        let cameraFeed = cameraContainer.querySelector("img");
+                        if (!cameraFeed) {
+                            cameraFeed = document.createElement("img");
+                            cameraContainer.appendChild(cameraFeed);
+                        }
+
+                        cameraFeed.src = `/video-stream-live?time=${new Date().getTime()}`;
+                        cameraFeed.style.maxWidth = "100%";
+                    } else {
+                        console.error("Failed to start camera:", response.statusText);
+                        errorMessage.innerHTML = `<p style="color: red;">${response.statusText}</p>`;
+                    }
+                })
+                .catch(error => {
+                    console.error("Error while starting the camera:", error);
+                    errorMessage.innerHTML = `<p style="color: red;">Error starting camera. Please try again.</p>`;
+                });
+        });
+}
+
+        function previewAudio() {
+        const audioFile = document.getElementById('audioFile').files[0];
+        if (audioFile) {
+            const audioPlayer = document.getElementById('audioPlayer');
+            const audioPlayerContainer = document.getElementById('audioPlayerContainer');
+            
+            // Create a URL for the selected audio file
+            const audioURL = URL.createObjectURL(audioFile);
+            audioPlayer.src = audioURL;
+            
+            // Show the audio player
+            audioPlayerContainer.style.display = 'flex';
+        }
+    }
+        
+   
+        function uploadAudio() {
+            let fileInput = document.getElementById("audioFile");
+            let file = fileInput.files[0];
+           console.log(file)
+            if (!file) {
+                alert("Please select an audio file first.");
+                return;
+            }
+
+            let formData = new FormData();
+            formData.append("audio", file);
+
+            fetch("/upload-audio", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("hello from backend ")
+                document.getElementById("result").innerText = data.predicted_emotion;
+                document.querySelector(".prediction").style.display = "block";
+            })
+            .catch(error => console.error("Error:", error));
+        }
+
+      
+        document.getElementById("uploadForm").onsubmit = async function(event) {
+            event.preventDefault();
+            let formData = new FormData();
+            formData.append("file", document.getElementById("videoFile").files[0]);
+
+            let response = await fetch("/upload-video", { method: "POST", body: formData });
+            let result = await response.text();
+            alert(result);
+
+            if (response.ok) {
+                let videoStream = document.getElementById("videoStream");
+        videoStream.style.display = "block"; // Show the stream
+        videoStream.src = "/video-stream?" + new Date().getTime(); // Update the video stream source
+    }   
+            };
+        
+        async function stopVideo() {
+            let response = await fetch("/stop-video", { method: "POST" });
+            let result = await response.text();
+            
+            document.getElementById("videoStream").style.display = "none"; // Hide video stream
+            alert(result);
+        }
+        async function turnOffCamera() {
+    let response = await fetch("/stop-video-live", { method: "POST" });
+    let result = await response.text();
+    
+    // Hide the camera container when turning off
+    const cameraContainer = document.getElementById("cameraContainer");
+    cameraContainer.style.display = "none";
+
+    // Optional: Clear the image element to reset the feed
+    let cameraFeed = cameraContainer.querySelector("img");
+    if (cameraFeed) {
+        cameraFeed.src = "";  // Stop the current feed
+        cameraContainer.removeChild(cameraFeed);  // Remove the image element if needed
+    }
+
+    console.log("Camera turned off successfully.");
+}
+
+    </script>
+
+</body>
+</html>
